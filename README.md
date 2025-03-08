@@ -20,15 +20,25 @@ Tugas ini mengimplementasikan **Feedforward Neural Network (FFNN)** dari awal ta
  ┃ ┣ 📜 laporan.pdf  # Laporan tugas besar
  ┃ ┗ 📜 references.bib  # Daftar referensi
  ┣ 📜 README.md  # Dokumentasi proyek
- ┗ 📜 requirements.txt  # Dependency yang digunakan
+ ┗ 📜 uv.lock  # Daftar dependency yang dikelola oleh uv
 ```
 
 ---
 
 ## **🚀 Cara Menjalankan Program**
-### **1️⃣ Instalasi Dependency**
+### **1️⃣ Instalasi Dependency dengan uv dan venv**
 ```bash
-pip install -r requirements.txt
+# Buat virtual environment dengan uv
+uv venv venv
+
+# Aktifkan virtual environment
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
+
+# Instal dependency dari uv.lock
+uv pip sync
 ```
 
 ### **2️⃣ Menjalankan Model**
@@ -50,7 +60,7 @@ jupyter notebook test.ipynb
 📌 **Koding:**  
 ✅ Membuat kelas **FFNN** dalam Python  
 ✅ Menangani **struktur jaringan** (jumlah layer & neuron per layer)  
-✅ Implementasi **fungsi aktivasi** (Linear, ReLU, Sigmoid, Tanh, Softmax)  
+✅ Implementasi **fungsi aktivasi** (Linear, ReLU, Sigmoid, Tanh, Softmax, Leaky ReLU, ELU)  
 ✅ Implementasi **forward propagation**  
 ✅ Implementasi **fungsi loss** (MSE, Binary Cross-Entropy, Categorical Cross-Entropy)  
 
@@ -66,6 +76,8 @@ jupyter notebook test.ipynb
 ✅ Menghitung **gradien bobot & bias** tiap layer  
 ✅ Implementasi **weight update** menggunakan **gradient descent**  
 ✅ Memastikan model bisa menerima **batch input**  
+✅ Implementasi **fungsi save & load model**  
+✅ Melatih model FFNN menggunakan **hyperparameter yang sama dengan sklearn MLPClassifier**  
 
 📌 **Dokumentasi:**  
 ✅ Menjelaskan cara kerja **backward propagation & perhitungan gradien**  
@@ -73,18 +85,20 @@ jupyter notebook test.ipynb
 
 ---
 
-### **Anggota 3: Pengujian, Analisis, dan Visualisasi**  
+### **Anggota 3: Pengujian, Analisis, dan Perbandingan dengan sklearn**  
 📌 **Koding:**  
-✅ Implementasi **inisialisasi bobot** (Zero, Uniform, Normal)  
-✅ Implementasi **fungsi save & load model**  
+✅ Implementasi **inisialisasi bobot** (Zero, Uniform, Normal, Xavier, He)  
 ✅ Menulis **notebook pengujian** (`.ipynb`)  
 ✅ Menguji model dengan **dataset MNIST_784**  
 ✅ Menampilkan **grafik loss training & distribusi bobot**  
+✅ Membandingkan hasil prediksi FFNN dan sklearn MLPClassifier  
+✅ Menyusun tabel/visualisasi perbandingan hasil model  
 
 📌 **Dokumentasi:**  
 ✅ Menulis hasil **pengujian & analisis hyperparameter**  
 ✅ Membahas pengaruh **depth, width, fungsi aktivasi, learning rate** terhadap model  
-✅ Menyusun bagian **kesimpulan dan saran**  
+✅ Menulis kesimpulan tentang kelebihan & kekurangan FFNN dari scratch dibandingkan sklearn  
+✅ Menyusun analisis performa FFNN vs sklearn MLPClassifier dalam laporan  
 
 ---
 
