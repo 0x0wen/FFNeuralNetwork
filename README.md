@@ -15,12 +15,12 @@ Tugas ini mengimplementasikan **Feedforward Neural Network (FFNN)** dari awal ta
  ┃ ┣ 📜 ffnn.py  # Implementasi kelas FFNN
  ┃ ┣ 📜 train.py  # Script untuk melatih model
  ┃ ┣ 📜 test.ipynb  # Notebook pengujian model
+ ┃ ┣ 📜 uv.lock  # Daftar dependency yang dikelola oleh uv
  ┃ ┗ 📜 utils.py  # Fungsi tambahan (visualisasi, preprocessing)
  ┣ 📂 doc
  ┃ ┣ 📜 laporan.pdf  # Laporan tugas besar
  ┃ ┗ 📜 references.bib  # Daftar referensi
- ┣ 📜 README.md  # Dokumentasi proyek
- ┗ 📜 uv.lock  # Daftar dependency yang dikelola oleh uv
+ ┗ 📜 README.md  # Dokumentasi proyek
 ```
 
 ---
@@ -28,6 +28,9 @@ Tugas ini mengimplementasikan **Feedforward Neural Network (FFNN)** dari awal ta
 ## **🚀 Cara Menjalankan Program**
 ### **1️⃣ Instalasi Dependency dengan uv dan venv**
 ```bash
+# Masuk ke src
+cd src
+
 # Buat virtual environment dengan uv
 uv venv venv
 
