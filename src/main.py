@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import accuracy_score, classification_report
 
-from ffnn import FFNN  # Import FFNN class yang sudah dibuat sebelumnya
+from ffnn import FFNN  
 
 def load_data(dataset_name="mnist_784"):
     print(f"Loading {dataset_name} dataset...")

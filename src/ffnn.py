@@ -13,8 +13,8 @@ class FFNN:
         layer_sizes: List[int],
         activation_functions: List[str],
         loss_function: str,
-        weight_initialization: str = "random_normal",
-        weight_init_params: Dict = {"mean": 0, "variance": 0.1, "seed": 42},
+        weight_initialization: str,
+        weight_init_params: Dict,
     ):
         if len(layer_sizes) < 2:
             raise ValueError("At least 2 layers (input and output) are required")
@@ -34,8 +34,8 @@ class FFNN:
         
         self._initialize_weights(weight_initialization, weight_init_params)
         
-        self.z_values = []  # Pre-activation values
-        self.a_values = []  # Post-activation values
+        self.z_values = []  
+        self.a_values = []  
         
         self.history = {
             'train_loss': [],
@@ -44,13 +44,40 @@ class FFNN:
     
     def _initialize_weights(self, method: str, params: Dict):
         np.random.seed(params.get('seed', 42))
+        
         for i in range(self.n_layers - 1):
             input_size = self.layer_sizes[i]
-            output_size = self.layer_sizes[i+1]
+            output_size = self.layer_sizes[i + 1]
             
-            W = np.zeros((input_size, output_size))
+            if method.lower() == "zeros":
+                W = np.zeros((input_size, output_size))
+                b = np.zeros((1, output_size))
             
-            b = np.zeros((1, output_size))
+            elif method.lower() == "random_uniform":
+                lower_bound = params.get('lower_bound', -0.1)  
+                upper_bound = params.get('upper_bound', 0.1)   
+                W = np.random.uniform(low=lower_bound, high=upper_bound, size=(input_size, output_size))
+                b = np.random.uniform(low=lower_bound, high=upper_bound, size=(1, output_size))
+            
+            elif method.lower() == "random_normal":
+                mean = params.get('mean', 0.0)         
+                variance = params.get('variance', 0.1) 
+                std = np.sqrt(variance)                
+                W = np.random.normal(loc=mean, scale=std, size=(input_size, output_size))
+                b = np.random.normal(loc=mean, scale=std, size=(1, output_size))
+            
+            elif method.lower() == "xavier":
+                limit = np.sqrt(6 / (input_size + output_size))
+                W = np.random.uniform(low=-limit, high=limit, size=(input_size, output_size))
+                b = np.zeros((1, output_size))  
+                
+            elif method.lower() == "he":
+                limit = np.sqrt(2 / input_size)
+                W = np.random.normal(loc=0.0, scale=limit, size=(input_size, output_size))
+                b = np.zeros((1, output_size))  
+            
+            else:
+                raise ValueError(f"Method Intialize '{method}' not supported. Chose: 'zeros', 'random_uniform', 'random_normal', 'xavier', 'he'.")
             
             self.weights.append(W)
             self.biases.append(b)
@@ -64,7 +91,7 @@ class FFNN:
             return Z
         
         elif activation == "sigmoid":
-            return 1 / (1 + np.exp(-np.clip(Z, -500, 500)))  # Clip to avoid overflow
+            return 1 / (1 + np.exp(-np.clip(Z, -500, 500))) 
         
         elif activation == "tanh":
             return np.tanh(Z)
@@ -105,7 +132,7 @@ class FFNN:
             raise ValueError(f"Unsupported loss function: {self.loss_function}")
     
     def _compute_loss_gradient(self, y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
-        m = y_true.shape[0]  # Batch size
+        m = y_true.shape[0]  
         
         if self.loss_function == "mse":
             return (2/m) * (y_pred - y_true)
@@ -126,7 +153,7 @@ class FFNN:
     
     def forward(self, X: np.ndarray) -> np.ndarray:
         self.z_values = []
-        self.a_values = [X]  # Input is the first activation
+        self.a_values = [X] 
         
         A = X
         for i in range(self.n_layers - 1):
@@ -141,7 +168,7 @@ class FFNN:
             self.z_values.append(Z)
             self.a_values.append(A)
         
-        return A  # Return final output
+        return A  
     
     def backward(self, y_true: np.ndarray) -> None:
         pass
@@ -163,7 +190,6 @@ class FFNN:
         n_samples = X_train.shape[0]
         n_batches = int(np.ceil(n_samples / batch_size))
         
-        # Reset history
         self.history = {
             'train_loss': [],
             'val_loss': []

@@ -330,7 +330,6 @@ def experiment_weight_initialization():
             "model": model
         })
         
-        # Plot training loss
         plt.plot(history['train_loss'], label=f"{init_method} (Train)", color=colors[i], linestyle='-')
         plt.plot(history['val_loss'], label=f"{init_method} (Val)", color=colors[i], linestyle='--')
     
@@ -358,7 +357,6 @@ def experiment_weight_initialization():
     plt.savefig('initial_weight_distributions.png')
     plt.close()
     
-    # Print results summary
     print("\nResults Summary:")
     print("-" * 80)
     print(f"{'Initialization':<15} {'Accuracy':<10} {'Training Time':<15}")
@@ -383,7 +381,8 @@ def compare_with_sklearn():
         layer_sizes=[X_train.shape[1]] + hidden_layers + [y_train.shape[1]],
         activation_functions=[activation, activation, 'softmax'],
         loss_function='categorical_crossentropy',
-        weight_initialization='he'
+        weight_initialization='he',
+        weight_init_params={'seed': 42}
     )
     
     start_time = time.time()
