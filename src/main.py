@@ -38,7 +38,8 @@ def create_model(input_size, output_size, hidden_layers, activations, loss_funct
         layer_sizes=layer_sizes,
         activation_functions=activations,
         loss_function=loss_function,
-        weight_initialization=weight_init
+        weight_initialization=weight_init,
+        weight_init_params={'seed': 42}
     )
     
     return model
