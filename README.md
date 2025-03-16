@@ -31,17 +31,22 @@ Tugas ini mengimplementasikan **Feedforward Neural Network (FFNN)** dari awal ta
 # Masuk ke src
 cd src
 
-# Buat virtual environment dengan uv
-uv venv venv
+# Inisiasi program dengan uv
+uv run
 
-# Aktifkan virtual environment
-# Windows
-venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
+# Args
+--dataset       : Dataset name
+--hidden_layers : Comma-separated list of hidden layer sizes
+--activations   : Comma-separated list of activation functions
+--loss          : Loss function
+--weight_init   : Weight initialization method
+--batch_size    : Batch size
+--learning_rate : Learning rate
+--epochs        : Number of epochs
+--save_model    : Path to save the model
 
-# Instal dependency dari uv.lock
-uv pip sync
+# Train and test
+python main.py --hidden_layers=128,64 --activations=relu,relu,softmax --learning_rate=0.01 --epochs=20
 ```
 
 ### **2️⃣ Menjalankan Model**
