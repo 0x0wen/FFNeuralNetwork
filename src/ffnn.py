@@ -193,12 +193,18 @@ class FFNN:
             return dZ
         
         elif activation == "softmax":
-            exp_Z = np.exp(Z - np.max(Z, axis=1, keepdims=True))
-            A = exp_Z / np.sum(exp_Z, axis=1, keepdims=True)
-            sum_ad = np.sum(A * dA, axis=1, keepdims=True)
-            dZ = A * (dA - sum_ad)
-            return dZ
-
+            if self.loss_function == "categorical_crossentropy":
+                self.logger.debug(f"Softmax backward: Using combined gradient with categorical cross-entropy")
+                return dA
+            else:
+                A = self._activation_forward(Z, "softmax")
+                dZ = np.zeros_like(Z)
+                for i in range(Z.shape[0]):
+                    s = A[i].reshape(-1, 1)
+                    dZ[i] = dA[i] * (s - s @ s.T).diagonal()
+                self.logger.debug(f"Softmax backward: General gradient computed")
+                return dZ
+                
         else:
             raise ValueError(f"Unsupported activation function: {activation}")
     
