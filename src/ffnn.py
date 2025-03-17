@@ -5,7 +5,7 @@ import logging
 import time
 import os
 from datetime import datetime
-
+import json
 
 class FFNN:
     """
@@ -200,9 +200,11 @@ class FFNN:
             return dZ
         
         elif activation == "softmax":
-            # For softmax, we typically compute dZ directly in backward pass
-            # when used with categorical crossentropy
-            return dA
+            exp_Z = np.exp(Z - np.max(Z, axis=1, keepdims=True))
+            A = exp_Z / np.sum(exp_Z, axis=1, keepdims=True)
+            sum_ad = np.sum(A * dA, axis=1, keepdims=True)
+            dZ = A * (dA - sum_ad)
+            return dZ
         
         else:
             raise ValueError(f"Unsupported activation function: {activation}")
@@ -271,12 +273,10 @@ class FFNN:
             
             Z = np.dot(A, W) + b
             
-            # Log statistics for pre-activation values
             self.logger.debug(f"Layer {i+1}: Z stats - Mean: {np.mean(Z):.6f}, Std: {np.std(Z):.6f}, Min: {np.min(Z):.6f}, Max: {np.max(Z):.6f}")
             
             A = self._activation_forward(Z, activation)
             
-            # Log statistics for post-activation values
             self.logger.debug(f"Layer {i+1}: A stats - Mean: {np.mean(A):.6f}, Std: {np.std(A):.6f}, Min: {np.min(A):.6f}, Max: {np.max(A):.6f}")
             
             self.z_values.append(Z)
@@ -288,75 +288,35 @@ class FFNN:
         return A  
     
     def backward(self, y_true: np.ndarray) -> None:
-        self.logger.debug("Backward pass started")
-        start_time = time.time()
-        
         m = y_true.shape[0]
-        y_pred = self.a_values[-1]
         
-        # Calculate initial gradient from loss function
-        dA = self._compute_loss_gradient(y_pred, y_true)
+        for i in range(len(self.weights)):
+            self.gradients_w[i] = np.zeros_like(self.weights[i])
+            self.gradients_b[i] = np.zeros_like(self.biases[i])
         
-        # Backpropagation for each layer
-        for layer in reversed(range(self.n_layers - 1)):
-            self.logger.debug(f"Layer {layer+1}: Backward computation")
-            
+        dA = self._compute_loss_gradient(self.a_values[-1], y_true)
+        
+        for layer in range(self.n_layers - 2, -1, -1):
             Z = self.z_values[layer]
             A_prev = self.a_values[layer]
-            W = self.weights[layer]
             activation = self.activation_functions[layer]
             
-            # Calculate gradient of activation function
             dZ = self._activation_backward(dA, Z, activation)
             
-            # Calculate gradients for weights and biases
-            dW = (1/m) * np.dot(A_prev.T, dZ)
-            db = (1/m) * np.sum(dZ, axis=0, keepdims=True)
+            self.gradients_w[layer] = np.dot(A_prev.T, dZ) / m
+            self.gradients_b[layer] = np.sum(dZ, axis=0, keepdims=True) / m
             
-            # Store gradients
-            self.gradients_w[layer] = dW
-            self.gradients_b[layer] = db
+            w_norm = np.linalg.norm(self.gradients_w[layer])
+            b_norm = np.linalg.norm(self.gradients_b[layer])
+            self.logger.debug(f"Layer {layer+1}: Weight gradient norm: {w_norm:.6f}, Bias gradient norm: {b_norm:.6f}")
             
-            # Log gradient statistics
-            self.logger.debug(f"Layer {layer+1}: dW stats - Mean: {np.mean(dW):.6f}, Std: {np.std(dW):.6f}, Min: {np.min(dW):.6f}, Max: {np.max(dW):.6f}")
-            self.logger.debug(f"Layer {layer+1}: db stats - Mean: {np.mean(db):.6f}, Std: {np.std(db):.6f}, Min: {np.min(db):.6f}, Max: {np.max(db):.6f}")
-            
-            # Calculate gradient for previous layer
             if layer > 0:
-                dA = np.dot(dZ, W.T)
-                self.logger.debug(f"Layer {layer}: dA stats - Mean: {np.mean(dA):.6f}, Std: {np.std(dA):.6f}")
-        
-        elapsed = time.time() - start_time
-        self.logger.debug(f"Backward pass completed in {elapsed:.6f} seconds")
-
+                dA = np.dot(dZ, self.weights[layer].T)
+    
     def update_weights(self, learning_rate: float) -> None:
-        self.logger.debug(f"Updating weights with learning rate: {learning_rate}")
-        start_time = time.time()
-        
-        # Update weights and biases based on calculated gradients
-        for i in range(self.n_layers - 1):
-            # Get gradients
-            dW = self.gradients_w[i]
-            db = self.gradients_b[i]
-            
-            # Get current parameters
-            W = self.weights[i]
-            b = self.biases[i]
-            
-            # Calculate weight update
-            W_update = learning_rate * dW
-            b_update = learning_rate * db
-            
-            # Log update statistics
-            self.logger.debug(f"Layer {i+1}: Weight update stats - Mean: {np.mean(W_update):.6f}, Max: {np.max(np.abs(W_update)):.6f}")
-            self.logger.debug(f"Layer {i+1}: Bias update stats - Mean: {np.mean(b_update):.6f}, Max: {np.max(np.abs(b_update)):.6f}")
-            
-            # Update parameters
-            self.weights[i] = W - W_update
-            self.biases[i] = b - b_update
-        
-        elapsed = time.time() - start_time
-        self.logger.debug(f"Weight update completed in {elapsed:.6f} seconds")
+        for i in range(len(self.weights)):
+            self.weights[i] -= learning_rate * self.gradients_w[i]
+            self.biases[i] -= learning_rate * self.gradients_b[i]
     
     def fit(
         self, 
@@ -384,7 +344,6 @@ class FFNN:
             epoch_start_time = time.time()
             self.logger.info(f"Epoch {epoch+1}/{epochs} started")
             
-            # Shuffle data
             indices = np.random.permutation(n_samples)
             X_shuffled = X_train[indices]
             y_shuffled = y_train[indices]
@@ -404,17 +363,13 @@ class FFNN:
                 X_batch = X_shuffled[start_idx:end_idx]
                 y_batch = y_shuffled[start_idx:end_idx]
                 
-                # Forward pass
                 y_pred = self.forward(X_batch)
                 
-                # Compute loss
                 batch_loss = self._compute_loss(y_pred, y_batch)
                 batch_losses.append(batch_loss)
                 
-                # Backward pass
                 self.backward(y_batch)
                 
-                # Update weights
                 self.update_weights(learning_rate)
                 
                 batch_time = time.time() - batch_start_time
@@ -423,14 +378,12 @@ class FFNN:
                 if batch % max(1, n_batches // 10) == 0 or batch == n_batches - 1:
                     self.logger.info(f"Epoch {epoch+1}, Batch {batch+1}/{n_batches}: loss = {batch_loss:.6f}, time = {batch_time:.3f}s")
             
-            # Calculate epoch metrics
             train_loss = np.mean(batch_losses)
             self.history['train_loss'].append(train_loss)
             
             epoch_time = time.time() - epoch_start_time
             avg_batch_time = np.mean(batch_times)
             
-            # Validation
             val_loss = None
             if X_val is not None and y_val is not None:
                 val_start_time = time.time()
@@ -443,7 +396,6 @@ class FFNN:
                 val_time = time.time() - val_start_time
                 self.logger.info(f"Validation completed in {val_time:.3f}s, loss: {val_loss:.6f}")
             
-            # Log epoch summary
             self.logger.info(f"Epoch {epoch+1}/{epochs} completed in {epoch_time:.3f}s - avg batch time: {avg_batch_time:.3f}s - train_loss: {train_loss:.6f}" + 
                            (f" - val_loss: {val_loss:.6f}" if val_loss is not None else ""))
             
@@ -479,10 +431,31 @@ class FFNN:
         pass
     
     def save_model(self, filename: str) -> None:
-       pass
+        model_data = {
+            'layer_sizes': self.layer_sizes,
+            'activation_functions': self.activation_functions,
+            'loss_function': self.loss_function,
+            'weights': [w.tolist() for w in self.weights],
+            'biases': [b.tolist() for b in self.biases],
+            'history': self.history
+        }
+        with open(filename, 'w') as f:
+            json.dump(model_data, f)
     
     def load_model(self, filename: str) -> None:
-        pass
+        with open(filename, 'r') as f:
+            model_data = json.load(f)
+        
+        self.layer_sizes = model_data['layer_sizes']
+        self.n_layers = len(self.layer_sizes)
+        self.activation_functions = model_data['activation_functions']
+        self.loss_function = model_data['loss_function']
+        self.weights = [np.array(w) for w in model_data['weights']]
+        self.biases = [np.array(b) for b in model_data['biases']]
+        self.history = model_data['history']
+        
+        self.gradients_w = [np.zeros_like(w) for w in self.weights]
+        self.gradients_b = [np.zeros_like(b) for b in self.biases]
 
     def plot_training_history(self) -> None:
         pass
