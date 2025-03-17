@@ -8,9 +8,6 @@ from datetime import datetime
 import json
 
 class FFNN:
-    """
-    Feedforward Neural Network (FFNN) with comprehensive logging
-    """
     
     def __init__(
         self, 
@@ -56,7 +53,6 @@ class FFNN:
         }
     
     def _setup_logging(self, logging_level: str, log_file: Optional[str] = None):
-        """Set up logger for the FFNN instance"""
         self.logger = logging.getLogger(f"FFNN_{id(self)}")
         self.logger.setLevel(getattr(logging, logging_level.upper()))
         
@@ -112,9 +108,14 @@ class FFNN:
                 W = np.random.uniform(low=-limit, high=limit, size=(input_size, output_size))
                 b = np.zeros((1, output_size))  
                 
+                # Kalau mau pake xavier tapi versi yang di normalized
+                # std = np.sqrt(2 / (input_size + output_size))
+                # W = np.random.normal(loc=0.0, scale=std, size=(input_size, output_size))
+                # b = np.zeros((1, output_size))  
+                
             elif method.lower() == "he":
-                limit = np.sqrt(2 / input_size)
-                W = np.random.normal(loc=0.0, scale=limit, size=(input_size, output_size))
+                std = np.sqrt(2 / input_size)
+                W = np.random.normal(loc=0.0, scale=std, size=(input_size, output_size))
                 b = np.zeros((1, output_size))  
             
             else:
