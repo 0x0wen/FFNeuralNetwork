@@ -28,7 +28,6 @@ class FFNN:
         if len(activation_functions) != len(layer_sizes) - 1:
             raise ValueError("Number of activation functions must be equal to number of layers - 1")
         
-        # Set up logging
         self._setup_logging(logging_level, log_file)
         
         self.layer_sizes = layer_sizes
@@ -58,25 +57,19 @@ class FFNN:
     
     def _setup_logging(self, logging_level: str, log_file: Optional[str] = None):
         """Set up logger for the FFNN instance"""
-        # Create logger
         self.logger = logging.getLogger(f"FFNN_{id(self)}")
         self.logger.setLevel(getattr(logging, logging_level.upper()))
         
-        # Remove any existing handlers to avoid duplicates
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
             
-        # Create formatter
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         
-        # Create console handler
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
         
-        # Create file handler if log_file is specified
         if log_file:
-            # Create log directory if it doesn't exist
             log_dir = os.path.dirname(log_file)
             if log_dir and not os.path.exists(log_dir):
                 os.makedirs(log_dir)
@@ -205,7 +198,7 @@ class FFNN:
             sum_ad = np.sum(A * dA, axis=1, keepdims=True)
             dZ = A * (dA - sum_ad)
             return dZ
-        
+
         else:
             raise ValueError(f"Unsupported activation function: {activation}")
     
@@ -422,13 +415,33 @@ class FFNN:
         return predictions
     
     def display_model(self) -> None:
-        pass
+        print("Feedforward Neural Network Architecture:")
+        print(f"Number of layers: {self.n_layers}")
+        print(f"Layer sizes: {self.layer_sizes}")
+        print(f"Activation functions: {self.activation_functions}")
+        print(f"Loss function: {self.loss_function}")
+        for i in range(self.n_layers - 1):
+            print(f"Layer {i+1} -> {i+2}: Weights {self.weights[i].shape}, Biases {self.biases[i].shape}")
+        total_params = sum(w.size + b.size for w, b in zip(self.weights, self.biases))
+        print(f"Total parameters: {total_params}")
     
     def plot_weight_distribution(self, layers: List[int]) -> None:
-        pass
+        for layer in layers:
+            if 1 <= layer < self.n_layers:
+                plt.hist(self.weights[layer - 1].flatten(), bins=50)
+                plt.title(f"Weight Distribution - Layer {layer}")
+                plt.xlabel("Weight Value")
+                plt.ylabel("Frequency")
+                plt.show()
     
     def plot_gradient_distribution(self, layers: List[int]) -> None:
-        pass
+        for layer in layers:
+            if 1 <= layer < self.n_layers:
+                plt.hist(self.gradients_w[layer - 1].flatten(), bins=50)
+                plt.title(f"Gradient Distribution - Layer {layer}")
+                plt.xlabel("Gradient Value")
+                plt.ylabel("Frequency")
+                plt.show()
     
     def save_model(self, filename: str) -> None:
         model_data = {
@@ -458,4 +471,13 @@ class FFNN:
         self.gradients_b = [np.zeros_like(b) for b in self.biases]
 
     def plot_training_history(self) -> None:
-        pass
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.history['train_loss'], label='Training Loss')
+        if self.history['val_loss']:
+            plt.plot(self.history['val_loss'], label='Validation Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Training History')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
