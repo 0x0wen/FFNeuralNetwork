@@ -342,7 +342,7 @@ class FFNN:
         
         for epoch in range(epochs):
             epoch_start_time = time.time()
-            self.logger.info(f"Epoch {epoch+1}/{epochs} started")
+            # self.logger.info(f"Epoch {epoch+1}/{epochs} started")
             
             indices = np.random.permutation(n_samples)
             X_shuffled = X_train[indices]
@@ -375,8 +375,8 @@ class FFNN:
                 batch_time = time.time() - batch_start_time
                 batch_times.append(batch_time)
                 
-                if batch % max(1, n_batches // 10) == 0 or batch == n_batches - 1:
-                    self.logger.info(f"Epoch {epoch+1}, Batch {batch+1}/{n_batches}: loss = {batch_loss:.6f}, time = {batch_time:.3f}s")
+                # if batch % max(1, n_batches // 10) == 0 or batch == n_batches - 1:
+                #     self.logger.info(f"Epoch {epoch+1}, Batch {batch+1}/{n_batches}: loss = {batch_loss:.6f}, time = {batch_time:.3f}s")
             
             train_loss = np.mean(batch_losses)
             self.history['train_loss'].append(train_loss)
@@ -396,8 +396,8 @@ class FFNN:
                 val_time = time.time() - val_start_time
                 self.logger.info(f"Validation completed in {val_time:.3f}s, loss: {val_loss:.6f}")
             
-            self.logger.info(f"Epoch {epoch+1}/{epochs} completed in {epoch_time:.3f}s - avg batch time: {avg_batch_time:.3f}s - train_loss: {train_loss:.6f}" + 
-                           (f" - val_loss: {val_loss:.6f}" if val_loss is not None else ""))
+            # self.logger.info(f"Epoch {epoch+1}/{epochs} completed in {epoch_time:.3f}s - avg batch time: {avg_batch_time:.3f}s - train_loss: {train_loss:.6f}" + 
+            #                (f" - val_loss: {val_loss:.6f}" if val_loss is not None else ""))
             
             if verbose == 1:
                 if val_loss is not None:
