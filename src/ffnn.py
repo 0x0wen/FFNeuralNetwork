@@ -54,7 +54,11 @@ class FFNN:
     
     def _setup_logging(self, logging_level: str, log_file: Optional[str] = None):
         self.logger = logging.getLogger(f"FFNN_{id(self)}")
+        self.logger.propagate = True
         self.logger.setLevel(getattr(logging, logging_level.upper()))
+        
+        self.logger.disabled = True
+        return
         
         if self.logger.hasHandlers():
             self.logger.handlers.clear()
@@ -75,6 +79,7 @@ class FFNN:
             self.logger.addHandler(file_handler)
             
         self.logger.info("Logger initialized")
+        
     
     def _initialize_weights(self, method: str, params: Dict):
         self.logger.info(f"Initializing weights using {method} method with params {params}")
@@ -411,13 +416,13 @@ class FFNN:
         return self.history
     
     def predict(self, X: np.ndarray) -> np.ndarray:
-        self.logger.info(f"Predicting for {X.shape[0]} samples")
+        # self.logger.info(f"Predicting for {X.shape[0]} samples")
         start_time = time.time()
         
         predictions = self.forward(X)
         
         elapsed = time.time() - start_time
-        self.logger.info(f"Prediction completed in {elapsed:.3f}s")
+        # self.logger.info(f"Prediction completed in {elapsed:.3f}s")
         
         return predictions
     
@@ -433,6 +438,7 @@ class FFNN:
         print(f"Total parameters: {total_params}")
     
     def plot_weight_distribution(self, layers: List[int]) -> None:
+        plt.figure(figsize=(5, 5))
         for layer in layers:
             if 1 <= layer < self.n_layers:
                 plt.hist(self.weights[layer - 1].flatten(), bins=50)
@@ -442,6 +448,7 @@ class FFNN:
                 plt.show()
     
     def plot_gradient_distribution(self, layers: List[int]) -> None:
+        plt.figure(figsize=(5, 5))
         for layer in layers:
             if 1 <= layer < self.n_layers:
                 plt.hist(self.gradients_w[layer - 1].flatten(), bins=50)
