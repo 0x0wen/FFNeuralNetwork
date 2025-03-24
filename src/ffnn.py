@@ -78,8 +78,7 @@ class FFNN:
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
             
-        self.logger.info("Logger initialized")
-        
+        self.logger.info("Logger initialized")       
     
     def _initialize_weights(self, method: str, params: Dict):
         self.logger.info(f"Initializing weights using {method} method with params {params}")
@@ -134,7 +133,6 @@ class FFNN:
             
             self.logger.debug(f"Layer {i+1}: Weight stats - Mean: {np.mean(W):.6f}, Std: {np.std(W):.6f}, Min: {np.min(W):.6f}, Max: {np.max(W):.6f}")
             self.logger.debug(f"Layer {i+1}: Bias stats - Mean: {np.mean(b):.6f}, Std: {np.std(b):.6f}, Min: {np.min(b):.6f}, Max: {np.max(b):.6f}")
-
     
     def _activation_forward(self, Z: np.ndarray, activation: str) -> np.ndarray:
         self.logger.debug(f"Applying {activation} activation function")
@@ -436,6 +434,40 @@ class FFNN:
             print(f"Layer {i+1} -> {i+2}: Weights {self.weights[i].shape}, Biases {self.biases[i].shape}")
         total_params = sum(w.size + b.size for w, b in zip(self.weights, self.biases))
         print(f"Total parameters: {total_params}")
+
+    def display_graph(self):
+        max_neurons = max(self.layer_sizes)
+        layer_spacing = 1.0
+        neuron_spacing = 0.5
+
+        # Buat plot
+        plt.figure(figsize=(12, 8))
+
+        # Gambar neuron per lapisan
+        for layer_idx, layer_size in enumerate(self.layer_sizes):
+            x_pos = layer_idx * layer_spacing
+            y_positions = np.linspace(-max_neurons * neuron_spacing / 2, max_neurons * neuron_spacing / 2, layer_size)
+            for neuron_idx in range(layer_size):
+                plt.scatter(x_pos, y_positions[neuron_idx], s=100, color='blue')
+                plt.text(x_pos, y_positions[neuron_idx] + 0.1, f'N{neuron_idx + 1}', ha='center')
+
+        # Gambar koneksi dan bobot
+        for layer_idx in range(self.n_layers - 1):
+            for from_neuron in range(self.layer_sizes[layer_idx]):
+                for to_neuron in range(self.layer_sizes[layer_idx + 1]):
+                    weight = self.weights[layer_idx][from_neuron, to_neuron]
+                    x_from = layer_idx * layer_spacing
+                    y_from = np.linspace(-max_neurons * neuron_spacing / 2, max_neurons * neuron_spacing / 2, self.layer_sizes[layer_idx])[from_neuron]
+                    x_to = (layer_idx + 1) * layer_spacing
+                    y_to = np.linspace(-max_neurons * neuron_spacing / 2, max_neurons * neuron_spacing / 2, self.layer_sizes[layer_idx + 1])[to_neuron]
+                    plt.plot([x_from, x_to], [y_from, y_to], 'k-', linewidth=0.5)
+                    plt.text((x_from + x_to) / 2, (y_from + y_to) / 2, f'{weight:.2f}', fontsize=8, color='red')
+        plt.title('Struktur Feedforward Neural Network')
+        plt.xlabel('Layer')
+        plt.ylabel('Neuron')
+        plt.xticks(np.arange(self.n_layers) * layer_spacing, [f'Layer {i+1}' for i in range(self.n_layers)])
+        plt.grid(True)
+        plt.show()
     
     def plot_weight_distribution(self, layers: List[int]) -> None:
         plt.figure(figsize=(5, 5))
