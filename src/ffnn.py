@@ -17,7 +17,9 @@ class FFNN:
         weight_initialization: str,
         weight_init_params: Dict,
         logging_level: str = "INFO",
-        log_file: Optional[str] = None
+        log_file: Optional[str] = None,
+        l1_lambda: float = 0.0,  
+        l2_lambda: float = 0.0   
     ):
         if len(layer_sizes) < 2:
             raise ValueError("At least 2 layers (input and output) are required")
@@ -31,6 +33,8 @@ class FFNN:
         self.n_layers = len(layer_sizes)
         self.activation_functions = activation_functions
         self.loss_function = loss_function
+        self.l1_lambda = l1_lambda 
+        self.l2_lambda = l2_lambda
         
         self.weights = []
         self.biases = []
@@ -41,7 +45,9 @@ class FFNN:
         self.logger.info(f"Activation functions: {activation_functions}")
         self.logger.info(f"Loss function: {loss_function}")
         self.logger.info(f"Weight initialization method: {weight_initialization}")
-        
+        self.logger.info(f"L1 regularization lambda: {l1_lambda}")
+        self.logger.info(f"L2 regularization lambda: {l2_lambda}")
+
         self._initialize_weights(weight_initialization, weight_init_params)
         
         self.z_values = []  
@@ -216,25 +222,34 @@ class FFNN:
         self.logger.debug(f"Computing {self.loss_function} loss")
         
         if self.loss_function == "mse":
-            loss = np.mean(np.square(y_pred - y_true))
-            self.logger.debug(f"MSE loss: {loss:.6f}")
-            return loss
-        
+            base_loss = np.mean(np.square(y_pred - y_true))
         elif self.loss_function == "binary_crossentropy":
             y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
-            loss = -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
-            self.logger.debug(f"Binary cross-entropy loss: {loss:.6f}")
-            return loss
-        
+            base_loss = -np.mean(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
         elif self.loss_function == "categorical_crossentropy":
             y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
-            loss = -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
-            self.logger.debug(f"Categorical cross-entropy loss: {loss:.6f}")
-            return loss
-        
+            base_loss = -np.mean(np.sum(y_true * np.log(y_pred), axis=1))
         else:
             raise ValueError(f"Unsupported loss function: {self.loss_function}")
-    
+        
+        l1_reg_term = 0
+        if self.l1_lambda > 0:
+            for w in self.weights:
+                l1_reg_term += np.sum(np.abs(w))
+            l1_reg_term *= self.l1_lambda
+            self.logger.debug(f"L1 regularization term: {l1_reg_term:.6f}")
+        
+        l2_reg_term = 0
+        if self.l2_lambda > 0:
+            for w in self.weights:
+                l2_reg_term += np.sum(np.square(w))
+            l2_reg_term *= 0.5 * self.l2_lambda  
+            self.logger.debug(f"L2 regularization term: {l2_reg_term:.6f}")
+        
+        total_loss = base_loss + l1_reg_term + l2_reg_term
+        self.logger.debug(f"Total loss: {total_loss:.6f} (base: {base_loss:.6f}, L1: {l1_reg_term:.6f}, L2: {l2_reg_term:.6f})")
+        return total_loss
+
     def _compute_loss_gradient(self, y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
         m = y_true.shape[0]  
         self.logger.debug(f"Computing gradient of {self.loss_function} loss")
@@ -309,13 +324,21 @@ class FFNN:
             self.gradients_w[layer] = np.dot(A_prev.T, dZ) / m
             self.gradients_b[layer] = np.sum(dZ, axis=0, keepdims=True) / m
             
+            if self.l1_lambda > 0:
+                l1_grad = np.sign(self.weights[layer]) * self.l1_lambda
+                self.gradients_w[layer] += l1_grad
+            
+            if self.l2_lambda > 0:
+                l2_grad = self.weights[layer] * self.l2_lambda
+                self.gradients_w[layer] += l2_grad
+            
             w_norm = np.linalg.norm(self.gradients_w[layer])
             b_norm = np.linalg.norm(self.gradients_b[layer])
             self.logger.debug(f"Layer {layer+1}: Weight gradient norm: {w_norm:.6f}, Bias gradient norm: {b_norm:.6f}")
             
             if layer > 0:
                 dA = np.dot(dZ, self.weights[layer].T)
-    
+
     def update_weights(self, learning_rate: float) -> None:
         for i in range(len(self.weights)):
             self.weights[i] -= learning_rate * self.gradients_w[i]
@@ -430,6 +453,8 @@ class FFNN:
         print(f"Layer sizes: {self.layer_sizes}")
         print(f"Activation functions: {self.activation_functions}")
         print(f"Loss function: {self.loss_function}")
+        print(f"L1 regularization lambda: {self.l1_lambda}")
+        print(f"L2 regularization lambda: {self.l2_lambda}")
         for i in range(self.n_layers - 1):
             print(f"Layer {i+1} -> {i+2}: Weights {self.weights[i].shape}, Biases {self.biases[i].shape}")
         total_params = sum(w.size + b.size for w, b in zip(self.weights, self.biases))

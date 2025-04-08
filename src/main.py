@@ -31,7 +31,7 @@ def load_data(dataset_name="mnist_784"):
     
     return X_train, X_test, y_train_encoded, y_test_encoded, y_train, y_test
 
-def create_model(input_size, output_size, hidden_layers, activations, loss_function, weight_init):
+def create_model(input_size, output_size, hidden_layers, activations, loss_function, weight_init, l1_lambda, l2_lambda):
     layer_sizes = [input_size] + hidden_layers + [output_size]
     
     model = FFNN(
@@ -39,7 +39,9 @@ def create_model(input_size, output_size, hidden_layers, activations, loss_funct
         activation_functions=activations,
         loss_function=loss_function,
         weight_initialization=weight_init,
-        weight_init_params={'seed': 42}
+        weight_init_params={'seed': 42},
+        l1_lambda=l1_lambda,
+        l2_lambda=l2_lambda,
     )
     
     return model
@@ -55,6 +57,8 @@ def main():
     parser.add_argument("--learning_rate", type=float, default=0.01, help="Learning rate")
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
     parser.add_argument("--save_model", type=str, default="model.npy", help="Path to save the model")
+    parser.add_argument("--l1", type=int, default="0", help="Lambda for L1 regularization")
+    parser.add_argument("--l2", type=int, default="0", help="Lambda for L2 regularization")
     args = parser.parse_args()
     
     hidden_layers = [int(size) for size in args.hidden_layers.split(",")]
@@ -71,7 +75,9 @@ def main():
         hidden_layers=hidden_layers,
         activations=activations,
         loss_function=args.loss,
-        weight_init=args.weight_init
+        weight_init=args.weight_init,
+        l1_lambda=args.l1,
+        l2_lambda=args.l2
     )
     
     print("\nModel structure:")
@@ -112,6 +118,8 @@ def main():
     
     print("\nPlotting training history...")
     model.plot_training_history()
-
+    print(model.gradients_b)
+    print(model.gradients_w)
+    
 if __name__ == "__main__":
     main()
